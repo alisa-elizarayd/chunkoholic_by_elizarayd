@@ -2836,7 +2836,7 @@
 
   <div class="auth-bar">
     <span class="auth-status" id="authStatus">☁️ Local mode</span>
-    <button class="auth-btn" id="authOpenBtn" type="button">☁️ Sign in</button>
+    <button class="auth-btn" id="authOpenBtn" type="button">☁️ Sign in / Register</button>
   </div>
 
   <div class="logo">Kirschholiker <span>🍒</span></div>
@@ -4285,7 +4285,7 @@ function updateAuthUI() {
     if (signOut) signOut.style.display = 'inline-flex';
   } else {
     status.textContent = '☁️ Local mode';
-    openBtn.textContent = '☁️ Sign in';
+    openBtn.textContent = '☁️ Sign in / Register';
     if (signIn) signIn.style.display = 'inline-flex';
     if (signUp) signUp.style.display = 'inline-flex';
     if (signOut) signOut.style.display = 'none';
