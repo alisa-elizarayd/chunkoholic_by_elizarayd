@@ -1,1 +1,2 @@
-# chunkoholic_by_elizarayd
+# chunkoholic
+Alisa Gorshkova presents the project unter her IT-amplua "Elizarayd entwickelt"
