@@ -1,8 +1,9 @@
-const CACHE_NAME = 'chunkoholic-3.0-v1';
+const CACHE_NAME = 'chunkoholic-3.0-v2';
 
 const APP_FILES = [
   './',
   './index.html',
+  './supabase.min.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png'
