@@ -2679,6 +2679,35 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .sync-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--cocoa);
+    background: rgba(0,0,0,0.45);
+    color: var(--cream);
+    border-radius: 999px;
+    padding: 6px 9px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    cursor: pointer;
+    white-space: nowrap;
+    backdrop-filter: blur(5px);
+  }
+  .sync-indicator:hover { border-color: var(--kirsch-gold); }
+  .sync-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cocoa-light);
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.08);
+  }
+  .sync-indicator.synced .sync-dot { background: var(--success); }
+  .sync-indicator.syncing .sync-dot { background: var(--kirsch-gold); animation: syncPulse 1.1s ease-in-out infinite; }
+  .sync-indicator.offline .sync-dot { background: var(--due-red); }
+  .sync-indicator.local .sync-dot { background: var(--cocoa-light); }
+  @keyframes syncPulse { 50% { opacity: 0.35; transform: scale(0.75); } }
   .auth-modal {
     position: fixed;
     inset: 0;
@@ -2835,6 +2864,10 @@
 </div>
 
   <div class="auth-bar">
+    <button class="sync-indicator local" id="syncIndicator" type="button" title="Your data is stored locally on this device">
+      <span class="sync-dot" aria-hidden="true"></span>
+      <span id="syncIndicatorText">Local</span>
+    </button>
     <span class="auth-status" id="authStatus">☁️ Local mode</span>
     <button class="auth-btn" id="authOpenBtn" type="button">☁️ Sign in / Register</button>
   </div>
@@ -4268,6 +4301,31 @@ function setAuthBusy(busy) {
   if (signUp) signUp.disabled = busy;
 }
 
+function updateSyncIndicator(state, title) {
+  const indicator = document.getElementById('syncIndicator');
+  const label = document.getElementById('syncIndicatorText');
+  if (!indicator || !label) return;
+
+  const labels = {
+    local: 'Local',
+    syncing: 'Syncing…',
+    synced: 'Synced',
+    offline: 'Offline'
+  };
+  const titles = {
+    local: 'Data is stored only on this device. Sign in to sync across devices.',
+    syncing: 'Syncing your data with the cloud…',
+    synced: 'Your data is synced with the cloud.',
+    offline: 'Cloud sync is unavailable. Your data remains saved locally.'
+  };
+
+  indicator.classList.remove('local', 'syncing', 'synced', 'offline');
+  indicator.classList.add(state);
+  label.textContent = labels[state] || labels.local;
+  indicator.title = title || titles[state] || titles.local;
+  indicator.setAttribute('aria-label', indicator.title);
+}
+
 function updateAuthUI() {
   const status = document.getElementById('authStatus');
   const openBtn = document.getElementById('authOpenBtn');
@@ -4283,12 +4341,15 @@ function updateAuthUI() {
     if (signIn) signIn.style.display = 'none';
     if (signUp) signUp.style.display = 'none';
     if (signOut) signOut.style.display = 'inline-flex';
+    if (cloudReady) updateSyncIndicator('synced');
+    else updateSyncIndicator('syncing');
   } else {
     status.textContent = '☁️ Local mode';
     openBtn.textContent = '☁️ Sign in / Register';
     if (signIn) signIn.style.display = 'inline-flex';
     if (signUp) signUp.style.display = 'inline-flex';
     if (signOut) signOut.style.display = 'none';
+    updateSyncIndicator('local');
   }
 }
 
@@ -4451,6 +4512,7 @@ async function syncNow() {
 
   cloudSyncInFlight = (async () => {
     try {
+      updateSyncIndicator('syncing');
       // Apply explicit local deletions first, then upsert the current local state.
       const deletions = getCloudDeletions();
 
@@ -4470,11 +4532,13 @@ async function syncNow() {
 
       clearCloudDeletions();
       clearCloudSyncPending();
+      updateSyncIndicator('synced');
       return true;
     } catch (error) {
       console.error('Supabase background sync failed:', error);
+      updateSyncIndicator('offline');
 
-      // Keep the pending/deletion markers intact. This is important:
+      // Keep the pending/deletion markers intact; This is important:
       // if the device is temporarily offline, the next sync can retry.
       setAuthMessage(
         `Cloud sync temporarily unavailable: ${error?.message || error}`,
@@ -4622,6 +4686,7 @@ async function loadCloudData() {
 
 async function finishCloudLogin() {
   cloudReady = false;
+  updateSyncIndicator('syncing');
   setAuthMessage('Signed in. Syncing…', 'ok');
 
   const result = await loadCloudData();
@@ -4819,6 +4884,7 @@ async function signOutFromSupabase() {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('authOpenBtn')?.addEventListener('click', openAuthModal);
+  document.getElementById('syncIndicator')?.addEventListener('click', openAuthModal);
   document.getElementById('authCloseBtn')?.addEventListener('click', closeAuthModal);
   document.getElementById('authModal')?.addEventListener('click', e => {
     if (e.target.id === 'authModal') closeAuthModal();
