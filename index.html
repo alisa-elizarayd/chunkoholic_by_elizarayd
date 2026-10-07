@@ -2708,6 +2708,43 @@
   .sync-indicator.offline .sync-dot { background: var(--due-red); }
   .sync-indicator.local .sync-dot { background: var(--cocoa-light); }
   @keyframes syncPulse { 50% { opacity: 0.35; transform: scale(0.75); } }
+  .sync-help-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+  .sync-help-btn {
+    width: 21px;
+    height: 21px;
+    padding: 0;
+    border: 1px solid var(--kirsch-gold);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.45);
+    color: var(--kirsch-gold);
+    font-family: Georgia, serif;
+    font-size: 0.82rem;
+    font-weight: 900;
+    line-height: 19px;
+    cursor: pointer;
+  }
+  .sync-help-btn:hover { background: var(--cherry); color: var(--cream); }
+  .sync-help-popover {
+    position: absolute;
+    top: calc(100% + 9px);
+    right: 0;
+    width: min(285px, 78vw);
+    padding: 11px 13px;
+    border: 1px solid var(--cocoa-light);
+    border-radius: 11px;
+    background: rgba(31,14,8,0.97);
+    color: var(--cream);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+    font-size: 0.72rem;
+    line-height: 1.45;
+    text-align: left;
+    z-index: 80;
+  }
+  .sync-help-popover strong { color: var(--kirsch-gold); }
+  .sync-help-popover[hidden] { display: none; }
   .auth-modal {
     position: fixed;
     inset: 0;
@@ -2868,6 +2905,13 @@
       <span class="sync-dot" aria-hidden="true"></span>
       <span id="syncIndicatorText">Local</span>
     </button>
+    <span class="sync-help-wrap">
+      <button class="sync-help-btn" id="syncHelpBtn" type="button" aria-label="Sync help" aria-expanded="false">!</button>
+      <span class="sync-help-popover" id="syncHelpPopover" role="status" hidden>
+        <strong>Как работает синхронизация</strong><br>
+        При доступном облаке данные синхронизируются автоматически. Если мобильная сеть временно не пропускает Supabase, данные сохраняются локально и синхронизируются позже через Wi‑Fi или VPN.
+      </span>
+    </span>
     <span class="auth-status" id="authStatus">☁️ Local mode</span>
     <button class="auth-btn" id="authOpenBtn" type="button">☁️ Sign in / Register</button>
   </div>
@@ -4885,6 +4929,21 @@ async function signOutFromSupabase() {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('authOpenBtn')?.addEventListener('click', openAuthModal);
   document.getElementById('syncIndicator')?.addEventListener('click', openAuthModal);
+  const syncHelpBtn = document.getElementById('syncHelpBtn');
+  const syncHelpPopover = document.getElementById('syncHelpPopover');
+  syncHelpBtn?.addEventListener('click', event => {
+    event.stopPropagation();
+    if (!syncHelpPopover) return;
+    syncHelpPopover.hidden = !syncHelpPopover.hidden;
+    syncHelpBtn.setAttribute('aria-expanded', String(!syncHelpPopover.hidden));
+  });
+  document.addEventListener('click', event => {
+    if (!syncHelpPopover || syncHelpPopover.hidden) return;
+    if (!event.target.closest('.sync-help-wrap')) {
+      syncHelpPopover.hidden = true;
+      syncHelpBtn?.setAttribute('aria-expanded', 'false');
+    }
+  });
   document.getElementById('authCloseBtn')?.addEventListener('click', closeAuthModal);
   document.getElementById('authModal')?.addEventListener('click', e => {
     if (e.target.id === 'authModal') closeAuthModal();
